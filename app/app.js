@@ -42,62 +42,42 @@ exports.lamda2S3 = async (event, context, callback) => {
 
 };
 
-const AWS = require('aws-sdk');
-const s3 = new AWS.S3();
 const util = require('util');
-const cheerio = require('cherio')
+const getFromS3 = require('./modules/getFromS3');
+const makeJson = require('./modules/makeJson');
 
 exports.s32lamda = async (event, context,callback) => {
 
   console.log("Reading options from event:\n", util.inspect(event, {depth: 5}));
 
   const srcBucket = event.Records[0].s3.bucket.name;
-  // Object key may have spaces or unicode non-ASCII characters.
   const srcKey    = decodeURIComponent(event.Records[0].s3.object.key.replace(/\+/g, " "));
-  const dstBucket = srcBucket + "-resized";
+  const dstBucket = srcBucket + "-json";
   const dstKey    = srcKey.split(".")[0] + ".json";
 
-  try {
-    const params = {
-        Bucket: srcBucket,
-        Key: srcKey
-    };
-    var origimage = await s3.getObject(params).promise();
 
-  } catch (error) {
-      console.log(error);
-      return;
-  }
+  const origHTML = await getFromS3(srcBucket,srcKey);
 
-  const $ = cheerio.load(origimage.Body.toString('utf-8'));
-  const myScript = $(".module--detail script").html();
-  let jsonBody = (()=>{
-    let body = myScript.toString().split('var __DetailProp__ =')[1].trim();
-    body = (new Function("return " + body))();
-    console.log(body);
-    return JSON.stringify(body);
-  })();
+  const json = await makeJson(origHTML);
+
 
   try {
     const destparams = {
         Bucket: dstBucket,
         Key: dstKey,
-        Body: jsonBody,
+        Body: json,
         ContentType: "application/json"
     };
 
-    await s3.putObject(destparams).promise(); 
+    await await saveInS3(destparams);
       
   } catch (error) {
       console.log(error);
       return;
   } 
-    
-  callback(null,{
-    statusCode: 200,
-    body: JSON.stringify({
-      message: "ok"
-    })
-  });
+
+  console.log("出来たよ！");
+
+  // return 無し
 
 };
