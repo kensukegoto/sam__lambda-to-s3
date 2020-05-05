@@ -10,7 +10,6 @@ exports.handler = async (event, context, callback) => {
   const data = await getJson("https://www3.nhk.or.jp/news/json16/syuyo.json");
   const domain = "https://www3.nhk.or.jp/news/";
 
-  try {
   const links = data.channel.item.map(item => item.link);
 
   const processes = links.map(link => {
@@ -33,7 +32,6 @@ exports.handler = async (event, context, callback) => {
     })
   })
 
-  console.log(processes)
 
   await Promise.all(processes).then(data => {
     callback(null,{
@@ -41,10 +39,6 @@ exports.handler = async (event, context, callback) => {
       body: JSON.stringify({message:"OK"})
     })
   })
-  } catch (err){
-    console.log(err)
-  }
-
 
 };
 

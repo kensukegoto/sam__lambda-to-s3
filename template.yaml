@@ -10,6 +10,11 @@ Globals:
   Function:
     Timeout: 3
 
+# バケット名を起動時に設定したい
+Parameters:
+  HTMLBucket:
+    Type: String
+
 Resources:
   HelloWorldFunction:
     Type: AWS::Serverless::Function
@@ -21,7 +26,7 @@ Resources:
         - AmazonS3FullAccess # s3へのアクセス権
       Environment: 
         Variables:
-          BucketName: "lambda2s3-0503" # lambda内で使いたい変数
+          BucketName: !Sub ${HTMLBucket} # lambda内で使いたい変数
       Events:
         HelloWorld:
           Type: Api
