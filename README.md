@@ -1,3 +1,8 @@
+[s3->lambda->s3](https://github.com/kensukegoto/sam-s3-lambda)と統合。<br>
+<br>
+
+**！！起動後はs3のイベント設定を忘れない！！**
+
 # Fn::Sub
 
 スタック作成または更新するまで使用出来ない値を含むコマンドまたは出力を作成する
