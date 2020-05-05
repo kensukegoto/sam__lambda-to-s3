@@ -1,6 +1,5 @@
-const AWS = require("aws-sdk");
-const S3 = new AWS.S3();
-const fetch = require("node-fetch");
+const { getJson,getHTML } = require("./modules/getPages");
+const saveInS3 = require("./modules/saveInS3");
 
 // event
   // 呼び出し元の情報
@@ -8,59 +7,38 @@ const fetch = require("node-fetch");
   // 呼び出し、関数、および実行環境に関する情報（関数名など）
 exports.handler = async (event, context, callback) => {
 
-  const BucketName = process.env.BucketName;
+  const data = await getJson("https://www3.nhk.or.jp/news/json16/syuyo.json");
+  const domain = "https://www3.nhk.or.jp/news/";
 
-  const url = (()=>{
-    if(!event.queryStringParameters && !event.queryStringParameters.url) return null;
+  const links = data.channel.item.map(item => item.link);
+
+  const processes = links.map(link => {
+
+    return new Promise(async resolve => {
+
+      const html = await getHTML(domain + link);
+      const BucketName = process.env.BucketName;
+      const params = {
+        Bucket: BucketName,
+        Key: link,
+        Body: html,
+        ContentType: "html"
+      };
     
-    return event.queryStringParameters.url;
-  })();
+      await saveInS3(params);
+      
+      resolve();
 
-  if(!url) callback(new Error());
-
-  try {
-
-    const html = await fetch(url)
-      .then(res => res.text())
-
-    const now = new Date();
-
-    const params = {
-      Bucket: BucketName,
-      Key: `${now.getFullYear()}${("00" + (now.getMonth() + 1)).slice(-2)}${("00" + now.getDate()).slice(-2)}/index.html`,
-      Body: html,
-      ContentType: "html"
-    };
-
-    await savePromiseForS3(params);
-
-    const response = {
-      'statusCode': 200,
-      'body': JSON.stringify({
-        message: 'OK!?',
-      })
-    }
-
-    // 第一引数(エラー)を忘れない
-    callback(null, response);
+    })
+  })
 
 
-  } catch (err) {
-    callback(err);
-  }
+  await Promise.all(processes).then(data => {
+    callback(null,{
+      statusCode: 200,
+      body: JSON.stringify({message:"OK"})
+    })
+  })
 
 };
 
-
-function savePromiseForS3(params) {
-  return new Promise((resolve, reject) => {
-    S3.putObject(params, err => {
-      if (err) {
-        // rejectするとcatchに渡る
-        reject(err)
-      } else {
-        resolve();
-      }
-    })
-  })
-} // savePromiseForS3
