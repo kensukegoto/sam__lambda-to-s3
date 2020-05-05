@@ -12,11 +12,11 @@ Parameters:
   HTMLBucket:
     Type: String
 Resources:
-  HelloWorldFunction:
+  Lamda2S3:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: HelloWorldFunction
-      Handler: app.handler
+      CodeUri: Lamda2S3
+      Handler: app.lamda2S3
       Runtime: nodejs12.x
       Policies:
       - AmazonS3FullAccess
@@ -28,10 +28,27 @@ Resources:
         HelloWorld:
           Type: Api
           Properties:
-            Path: /hello
+            Path: /gethtml
             Method: get
+  S32Lambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: S32Lambda
+      Handler: app.s32lamda
+      Runtime: nodejs12.x
+      Timeout: 60
+      Policies: AWSLambdaExecute
+      Events:
+        CreateThumbnailEvent:
+          Type: S3
+          Properties:
+            Bucket:
+              Ref: SrcBucket
+            Events: s3:ObjectCreated:*
+  SrcBucket:
+    Type: AWS::S3::Bucket
 Outputs:
-  HelloWorldApi:
+  GetHTMLApi:
     Description: API Gateway endpoint URL for Prod stage for Hello World function
     Value:
-      Fn::Sub: https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/hello/
+      Fn::Sub: https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/gethtml/
