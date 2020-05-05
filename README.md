@@ -66,3 +66,16 @@ Resources:
           Key: 510
           MyName: "ken"
 ```
+
+# new PromiseもPromise.allもawaitする
+
+特にPromise.allの際にawait忘れ注意。忘れると非同期になった時点でlambdaが終了してしまう。
+
+```js
+  await Promise.all(processes).then(data => {
+    callback(null,{
+      statusCode: 200,
+      body: JSON.stringify({message:"OK"})
+    })
+  })
+```
